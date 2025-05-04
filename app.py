@@ -9,7 +9,7 @@ profiles = {}
 subscriptions = {}
 
 # Profile endpoints
-@app.route('/api/profile/insert-update', methods=['POST'])
+@app.route('/api/profile/create-update', methods=['POST'])
 def create_profile():
     data = request.get_json()
     
@@ -39,7 +39,7 @@ def create_profile():
         "trading_view_login": profile['trading_view_login'],
         "username": profile['username'],
         "message": "Profile created / updated successfully"
-    }), 201
+    }), 200
 
 @app.route('/api/profile/delete', methods=['POST'])
 def delete_profile():
@@ -55,27 +55,64 @@ def delete_profile():
     return jsonify({"message": f"Profile {member_id} deleted successfully"}), 200
 
 # Subscription endpoints
-@app.route('/api/subscriptions', methods=['POST'])
+@app.route('/api/subscription/create-update', methods=['POST'])
 def create_subscription():
     data = request.get_json()
-    subscription_id = str(len(subscriptions) + 1)
-    subscriptions[subscription_id] = data
-    return jsonify({"id": subscription_id, "message": "Subscription created successfully"}), 201
+    
+    # Check if this is a subscription creation or update event
+    if data.get('event') != 'subscription.created' and data.get('event') != 'subscription.updated':
+        return jsonify({"error": "Invalid event type"}), 400
+    
+    # Extract required fields
+    subscription_data = data.get('subscription', {})
+    member_id = subscription_data.get('member_id')
+    subscription_id = subscription_data.get('id')
+    
+    # Convert dates to date-only format
+    activated_at = subscription_data.get('activated_at', '').split('T')[0] if subscription_data.get('activated_at') else None
+    expires_at = subscription_data.get('expires_at', '').split('T')[0] if subscription_data.get('expires_at') else None
+    
+    # Store the subscription with the required fields
+    subscription = {
+        'member_id': member_id,
+        'subscription_id': subscription_id,
+        'activated_at': activated_at,
+        'expires_at': expires_at
+    }
 
-@app.route('/api/subscriptions/<subscription_id>', methods=['PUT'])
-def update_subscription(subscription_id):
-    if subscription_id not in subscriptions:
-        return jsonify({"error": "Subscription not found"}), 404
+    return jsonify({
+        "member_id": member_id,
+        "subscription_id": subscription_id,
+        "activated_at": activated_at,
+        "expires_at": expires_at,
+        "message": "Subscription created / updated successfully"
+    }), 201
+
+@app.route('/api/subscription/delete', methods=['POST'])
+def delete_subscription():
     data = request.get_json()
-    subscriptions[subscription_id].update(data)
-    return jsonify({"message": "Subscription updated successfully"}), 200
+    
+    # Check if this is a subscription deletion event
+    if data.get('event') != 'subscription.deleted':
+        return jsonify({"error": "Invalid event type"}), 400
+    
+    # Get subscription data from the payload
+    subscription_data = data.get('subscription', {})
+    member_id = subscription_data.get('member_id')
+    subscription_id = subscription_data.get('id')
+    
+    # Convert dates to date-only format
+    activated_at = subscription_data.get('activated_at', '').split('T')[0] if subscription_data.get('activated_at') else None
+    expires_at = subscription_data.get('expires_at', '').split('T')[0] if subscription_data.get('expires_at') else None
+    
 
-@app.route('/api/subscriptions/<subscription_id>', methods=['DELETE'])
-def delete_subscription(subscription_id):
-    if subscription_id not in subscriptions:
-        return jsonify({"error": "Subscription not found"}), 404
-    del subscriptions[subscription_id]
-    return jsonify({"message": "Subscription deleted successfully"}), 200
+    return jsonify({
+        "member_id": member_id,
+        "subscription_id": subscription_id,
+        "activated_at": activated_at,
+        "expires_at": expires_at,
+        "message": "Subscription deleted successfully"
+    }), 200
 
 
 if __name__ == '__main__':
