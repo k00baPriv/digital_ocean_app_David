@@ -4,7 +4,7 @@ spec:
     - name: wmarketimers-tv-api
       git:
         branch: main
-        repo_clone_url: https://github.com/k00baPriv/digital_ocean_app_David
+        repo_clone_url: https://github.com/k00baPriv/digital_ocean_app_David/
       envs:
-        - key: REDIRECT_TO
-          value: "https://duckduckgo.com"
+        - key: TRADING_VIEW_FIELD_ID
+          value: 3358
