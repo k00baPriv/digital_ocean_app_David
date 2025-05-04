@@ -1,8 +1,25 @@
-name: marketimers-tv-api
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+features:
+- buildpack-stack=ubuntu-22
+ingress:
+  rules:
+  - component:
+      name: digital-ocean-app-david
+    match:
+      path:
+        prefix: /
+name: monkfish-app
+region: fra
 services:
-- environment_slug: python
+- dockerfile_path: /Dockerfile
   github:
     branch: main
     deploy_on_push: true
-    repo: https://github.com/k00baPriv/digital_ocean_app_David
-  name: marketimers-tv-api
+    repo: k00baPriv/digital_ocean_app_David
+  http_port: 8080
+  instance_count: 2
+  instance_size_slug: apps-s-1vcpu-1gb
+  name: digital-ocean-app-david
+  source_dir: /
