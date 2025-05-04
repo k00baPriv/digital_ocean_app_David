@@ -1,0 +1,93 @@
+import os
+import logging
+from flask import Flask, redirect, request, jsonify
+
+app = Flask(__name__)
+
+# In-memory storage (replace with database in production)
+profiles = {}
+subscriptions = {}
+
+# Profile endpoints
+@app.route('/api/profiles', methods=['POST'])
+def create_profile():
+    data = request.get_json()
+    
+    # Extract the custom field value where field.id is 3358
+    custom_field_value = None
+    for field in data.get('custom_fields', []):
+        if field.get('field', {}).get('id') == 3358:
+            custom_field_value = field.get('value')
+            break
+    
+    if custom_field_value is None:
+        return jsonify({"error": "Required custom field not found"}), 400
+    
+    # Get member ID
+    member_id = data['member']['id']
+    
+    # Store the profile with the custom field value
+    profile_id = str(member_id)
+    profile = {
+        'member_id': profile_id,
+        'username': data['member']['username'],
+        'trading_view_login': custom_field_value
+    }
+    
+    return jsonify({
+        "member_id": profile['member_id'],
+        "trading_view_login": profile['trading_view_login'],
+        "username": profile['username'],
+        "message": "Profile created successfully"
+    }), 201
+
+@app.route('/api/profiles/<profile_id>', methods=['PUT'])
+def update_profile(profile_id):
+    if profile_id not in profiles:
+        return jsonify({"error": "Profile not found"}), 404
+    data = request.get_json()
+    profiles[profile_id].update(data)
+    return jsonify({"message": "Profile updated successfully"}), 200
+
+@app.route('/api/profiles/<profile_id>', methods=['DELETE'])
+def delete_profile(profile_id):
+    if profile_id not in profiles:
+        return jsonify({"error": "Profile not found"}), 404
+    del profiles[profile_id]
+    return jsonify({"message": "Profile deleted successfully"}), 200
+
+# Subscription endpoints
+@app.route('/api/subscriptions', methods=['POST'])
+def create_subscription():
+    data = request.get_json()
+    subscription_id = str(len(subscriptions) + 1)
+    subscriptions[subscription_id] = data
+    return jsonify({"id": subscription_id, "message": "Subscription created successfully"}), 201
+
+@app.route('/api/subscriptions/<subscription_id>', methods=['PUT'])
+def update_subscription(subscription_id):
+    if subscription_id not in subscriptions:
+        return jsonify({"error": "Subscription not found"}), 404
+    data = request.get_json()
+    subscriptions[subscription_id].update(data)
+    return jsonify({"message": "Subscription updated successfully"}), 200
+
+@app.route('/api/subscriptions/<subscription_id>', methods=['DELETE'])
+def delete_subscription(subscription_id):
+    if subscription_id not in subscriptions:
+        return jsonify({"error": "Subscription not found"}), 404
+    del subscriptions[subscription_id]
+    return jsonify({"message": "Subscription deleted successfully"}), 200
+
+
+if __name__ == '__main__':
+    # Bind to PORT if defined, otherwise default to 5000.
+    logger = logging.getLogger()
+
+    # Set the log level to DEBUG. This will increase verbosity of logging messages
+    logger.setLevel(logging.DEBUG)
+
+    # Add the StreamHandler as a logging handler
+    logger.addHandler(logging.StreamHandler())
+
+    app.run(host='0.0.0.0', port=8080)
