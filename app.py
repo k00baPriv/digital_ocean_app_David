@@ -9,7 +9,7 @@ profiles = {}
 subscriptions = {}
 
 # Profile endpoints
-@app.route('/api/profiles', methods=['POST'])
+@app.route('/api/profile/insert-update', methods=['POST'])
 def create_profile():
     data = request.get_json()
     
@@ -38,23 +38,21 @@ def create_profile():
         "member_id": profile['member_id'],
         "trading_view_login": profile['trading_view_login'],
         "username": profile['username'],
-        "message": "Profile created successfully"
+        "message": "Profile created / updated successfully"
     }), 201
 
-@app.route('/api/profiles/<profile_id>', methods=['PUT'])
-def update_profile(profile_id):
-    if profile_id not in profiles:
-        return jsonify({"error": "Profile not found"}), 404
+@app.route('/api/profile/delete', methods=['POST'])
+def delete_profile():
     data = request.get_json()
-    profiles[profile_id].update(data)
-    return jsonify({"message": "Profile updated successfully"}), 200
+    
+    # Check if this is a member deletion event
+    if data.get('event') != 'member.deleted':
+        return jsonify({"error": "Invalid event type"}), 400
+    
+    # Get member ID from the payload
+    member_id = str(data['member']['id'])
 
-@app.route('/api/profiles/<profile_id>', methods=['DELETE'])
-def delete_profile(profile_id):
-    if profile_id not in profiles:
-        return jsonify({"error": "Profile not found"}), 404
-    del profiles[profile_id]
-    return jsonify({"message": "Profile deleted successfully"}), 200
+    return jsonify({"message": f"Profile {member_id} deleted successfully"}), 200
 
 # Subscription endpoints
 @app.route('/api/subscriptions', methods=['POST'])
