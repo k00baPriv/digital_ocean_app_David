@@ -7,6 +7,9 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Trading View custom field ID from environment variable
+TRADING_VIEW_FIELD_ID = int(os.getenv('TRADING_VIEW_FIELD_ID', '3358'))
+
 # List of PII fields to mask
 PII_FIELDS = {
     'email': '***@***.***',
@@ -119,10 +122,10 @@ def create_profile():
         data = request.get_json()
         logger.info('Processing profile create/update request')
         
-        # Extract the custom field value where field.id is 3358
+        # Extract the custom field value where field.id matches TRADING_VIEW_FIELD_ID
         custom_field_value = None
         for field in data.get('custom_fields', []):
-            if field.get('field', {}).get('id') == 3358:
+            if field.get('field', {}).get('id') == TRADING_VIEW_FIELD_ID:
                 custom_field_value = field.get('value')
                 break
         

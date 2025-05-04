@@ -7,6 +7,9 @@ set -e
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
+# Default Trading View field ID
+TRADING_VIEW_FIELD_ID=${TRADING_VIEW_FIELD_ID:-3358}
+
 echo -e "${GREEN}Removing old Docker images to ensure clean rebuild...${NC}"
 docker rmi digital-ocean-app || true
 
