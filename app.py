@@ -1,10 +1,8 @@
 import os
 import logging
 from flask import Flask, redirect, request, jsonify
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # In-memory storage (replace with database in production)
 profiles = {}
@@ -90,13 +88,4 @@ if __name__ == '__main__':
     # Add the StreamHandler as a logging handler
     logger.addHandler(logging.StreamHandler())
 
-    # Get SSL certificate paths from environment variables
-    ssl_cert = os.environ.get('SSL_CERT_PATH')
-    ssl_key = os.environ.get('SSL_KEY_PATH')
-
-    if ssl_cert and ssl_key:
-        # Run with SSL if certificates are provided
-        app.run(host='0.0.0.0', port=8080, ssl_context=(ssl_cert, ssl_key))
-    else:
-        # Run without SSL if no certificates are provided
-        app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080)
