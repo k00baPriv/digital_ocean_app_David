@@ -5,10 +5,19 @@ from flask import Flask, redirect, request, jsonify
 import json
 from datetime import datetime
 
+import redis
+import ssl
+
+
 app = Flask(__name__)
 
 # Trading View custom field ID from environment variable
 TRADING_VIEW_FIELD_ID = int(os.getenv('TRADING_VIEW_FIELD_ID', '3358'))
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
+REDIS_USERNAME = os.getenv('REDIS_USERNAME', 'default')
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', 'default')
+
 
 # List of PII fields to mask
 PII_FIELDS = {
@@ -93,8 +102,45 @@ logger = logging.getLogger(__name__)
 profiles = {}
 subscriptions = {}
 
+def list_redis_keys(host, port, username, password, use_ssl=True, profile_hash=None, member_id=None):
+    print("Listing redis keys")
+    try:
+        # Connect to Redis
+        r = redis.StrictRedis(
+            host=REDIS_HOST,
+            port=REDIS_PORT,
+            username=REDIS_USERNAME,
+            password=REDIS_PASSWORD,
+            ssl=use_ssl,
+            ssl_cert_reqs=ssl.CERT_NONE,
+            decode_responses=True  # Makes sure you get strings, not bytes
+        )
+
+        # If profile_hash and member_id are provided, store them in Redis
+        if profile_hash is not None and member_id is not None:
+            r.set(member_id, profile_hash)
+            logger.info(f"Stored profile hash for member_id: {member_id}")
+
+        # Use SCAN to safely get all keys
+        cursor = 0
+        all_keys = []
+
+        while True:
+            cursor, keys = r.scan(cursor=cursor)
+            all_keys.extend(keys)
+            if cursor == 0:
+                break
+
+        return all_keys
+
+    except Exception as e:
+        logger.error(f"Error connecting to Redis: {e}")
+        return []
+
+
 @app.before_request
 def log_request_info():
+
     logger.info('Request: %s %s', request.method, request.url)
     logger.info('Headers: %s', dict(request.headers))
     if request.is_json:
@@ -136,19 +182,28 @@ def create_profile():
         # Get member ID
         member_id = data['member']['id']
         
-        # Store the profile with the custom field value
-        profile_id = str(member_id)
-        profile = {
-            'member_id': profile_id,
+        # Create profile hash
+        profile_hash = {
+            'member_id': str(member_id),
             'username': data['member']['username'],
             'trading_view_login': custom_field_value
         }
         
+        # Store profile in Redis
+        list_redis_keys(
+            REDIS_HOST, 
+            REDIS_PORT, 
+            REDIS_USERNAME, 
+            REDIS_PASSWORD,
+            profile_hash=json.dumps(profile_hash),
+            member_id=str(member_id)
+        )
+        
         logger.info('Profile created/updated successfully for member_id: %s', member_id)
         return jsonify({
-            "member_id": profile['member_id'],
-            "trading_view_login": profile['trading_view_login'],
-            "username": profile['username'],
+            "member_id": profile_hash['member_id'],
+            "trading_view_login": profile_hash['trading_view_login'],
+            "username": profile_hash['username'],
             "message": "Profile created / updated successfully"
         }), 200
     except Exception as e:
