@@ -1,25 +1,47 @@
 alerts:
 - rule: DEPLOYMENT_FAILED
 - rule: DOMAIN_FAILED
+envs:
+- key: TRADING_VIEW_FIELD_ID
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:XrukW/yWgdl9i+AQ49f4jPuSsKAlJeXX:QxpuoLp49aGH7ntLp1lezSwolEM=]
+- key: REDIS_USERNAME
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:GWDx+/dzpi9O3MytlqQEGpQ4MO2Ejbfi:yL+Xi66tP6eoZ+LDjuQKfzNHrEKbZPk=]
+- key: REDIS_PASSWORD
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:KrKfWjQj2tOGuNK0jA1t+8UikxjwHjk7:TEVGeZkHqIR3XZJYMmBYFaCZjpYsfXRxuPX5Y+i/sRI+ynPE4JWetg==]
+- key: REDIS_PORT
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:nC7Sc5rR65OYXrsqjKK4ZmCUqA+3MpXq:Ts2LSfVRdPalJnfKLaZ02QIBJrU1]
+- key: REDIS_HOST
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:lppOpvUTEru2VffgYUgXrPP/MolR/llt:3ThB08a9axjEwVO0xlwxdA39kr0H50Cv+D8yP4KNj4GsOR0KJQONUWq59+vHvncn17phKA02LbsXypcs+yPzwS3g8sT35HynYpsQJt0CwQxN05YdtgB6]
 features:
 - buildpack-stack=ubuntu-22
 ingress:
   rules:
   - component:
-      name: digital-ocean-app-david
+      name: wmarketimers-tv-api
     match:
       path:
         prefix: /
-name: monkfish-app
+name: marketimers-tv-api
 region: fra
 services:
-- dockerfile_path: /Dockerfile
-  github:
+- envs:
+  - key: TRADING_VIEW_FIELD_ID
+    scope: RUN_AND_BUILD_TIME
+    value: "3358"
+  git:
     branch: main
-    deploy_on_push: true
-    repo: k00baPriv/digital_ocean_app_David
+    repo_clone_url: https://github.com/k00baPriv/digital_ocean_app_David/
   http_port: 8080
-  instance_count: 2
+  instance_count: 1
   instance_size_slug: apps-s-1vcpu-1gb
-  name: digital-ocean-app-david
-  source_dir: /
+  name: wmarketimers-tv-api
