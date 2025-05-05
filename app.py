@@ -120,6 +120,8 @@ def list_redis_keys(host, port, username, password, use_ssl=True, profile_hash=N
         if profile_hash is not None and member_id is not None:
             r.set(member_id, profile_hash)
             logger.info(f"Stored profile hash for member_id: {member_id}")
+        else:
+            logger.info(f"No profile hash for member_id: {member_id}")
 
         # Use SCAN to safely get all keys
         cursor = 0
